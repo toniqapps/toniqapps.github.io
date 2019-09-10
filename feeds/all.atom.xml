@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Rahul</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2019-09-10T09:10:00+02:00</updated><entry><title>Profiling basic training metrics in Keras</title><link href="/profiling-basic-training-metrics-in-keras.html" rel="alternate"></link><published>2019-09-10T09:10:00+02:00</published><updated>2019-09-10T09:10:00+02:00</updated><author><name>Rahul Jain</name></author><id>tag:None,2019-09-10:/profiling-basic-training-metrics-in-keras.html</id><summary type="html">&lt;h1&gt;Profiling basic training metrics in Keras&lt;/h1&gt;
+&lt;p&gt;Performance is critical for machine learning. TensorFlow has a built-in profiler that allows you to record runtime of each ops with very little effort. Then you can visualize the profile result in TensorBoard's Profile Plugin. This tutorial focuses on GPU but the Profile Plugin …&lt;/p&gt;</summary><content type="html">&lt;h1&gt;Profiling basic training metrics in Keras&lt;/h1&gt;
+&lt;p&gt;Performance is critical for machine learning. TensorFlow has a built-in profiler that allows you to record runtime of each ops with very little effort. Then you can visualize the profile result in TensorBoard's Profile Plugin. This tutorial focuses on GPU but the Profile Plugin can also be used with TPUs by following the Cloud TPU Tools.&lt;/p&gt;
+&lt;p&gt;This tutorial presents very basic examples to help you learn how to enable profiler when developing your Keras model. You will learn how to use the Keras TensorBoard callback to visualize profile result.&lt;/p&gt;
+&lt;h2&gt;Prerequisites&lt;/h2&gt;
+&lt;h3&gt;Setup&lt;/h3&gt;
+&lt;h2&gt;Network&lt;/h2&gt;
+&lt;h3&gt;Densnet Model model with TensorBoard callback&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;def&lt;/span&gt; &lt;span class="nv"&gt;add_denseblock&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;input&lt;/span&gt;, &lt;span class="nv"&gt;num_filter&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;12&lt;/span&gt;, &lt;span class="nv"&gt;dropout_rate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;.&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:
+    &lt;span class="nv"&gt;temp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;input&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nv"&gt;_&lt;/span&gt; &lt;span class="nv"&gt;in&lt;/span&gt; &lt;span class="nv"&gt;range&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;l&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:
+        &lt;span class="nv"&gt;BatchNorm&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;BatchNormalization&lt;/span&gt;&lt;span class="ss"&gt;()(&lt;/span&gt;&lt;span class="nv"&gt;temp&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+        &lt;span class="nv"&gt;relu&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Activation&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="s"&gt;relu&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;&lt;span class="nv"&gt;BatchNorm&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+        &lt;span class="nv"&gt;Conv2D_3_3&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Conv2D&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;int&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;num_filter&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;, &lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;,&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;, &lt;span class="nv"&gt;use_bias&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;False&lt;/span&gt; ,&lt;span class="nv"&gt;padding&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="s"&gt;same&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;&lt;span class="nv"&gt;relu&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;:
+            &lt;span class="nv"&gt;Conv2D_3_3&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Dropout&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;&lt;span class="nv"&gt;Conv2D_3_3&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+        &lt;span class="nv"&gt;concat&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Concatenate&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;axis&lt;/span&gt;&lt;span class="o"&gt;=-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;[&lt;span class="nv"&gt;temp&lt;/span&gt;, &lt;span class="nv"&gt;Conv2D_3_3&lt;/span&gt;]&lt;span class="ss"&gt;)&lt;/span&gt;
+
+        &lt;span class="nv"&gt;temp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;concat&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;temp&lt;/span&gt;
+
+&lt;span class="nv"&gt;def&lt;/span&gt; &lt;span class="nv"&gt;add_transition&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;input&lt;/span&gt;, &lt;span class="nv"&gt;num_filter&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;12&lt;/span&gt;, &lt;span class="nv"&gt;dropout_rate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;.&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:
+    &lt;span class="nv"&gt;global&lt;/span&gt; &lt;span class="nv"&gt;compression&lt;/span&gt;
+    &lt;span class="nv"&gt;BatchNorm&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;BatchNormalization&lt;/span&gt;&lt;span class="ss"&gt;()(&lt;/span&gt;&lt;span class="nv"&gt;input&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+    &lt;span class="nv"&gt;relu&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Activation&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="s"&gt;relu&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;&lt;span class="nv"&gt;BatchNorm&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+    &lt;span class="nv"&gt;Conv2D_BottleNeck&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Conv2D&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;int&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;num_filter&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="nv"&gt;compression&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;, &lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;,&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;, &lt;span class="nv"&gt;use_bias&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;False&lt;/span&gt; ,&lt;span class="nv"&gt;padding&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="s"&gt;same&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;&lt;span class="nv"&gt;relu&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;:
+        &lt;span class="nv"&gt;Conv2D_BottleNeck&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Dropout&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;&lt;span class="nv"&gt;Conv2D_BottleNeck&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+    &lt;span class="nv"&gt;avg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;AveragePooling2D&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;pool_size&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;,&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="ss"&gt;))(&lt;/span&gt;&lt;span class="nv"&gt;Conv2D_BottleNeck&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;avg&lt;/span&gt;
+
+&lt;span class="nv"&gt;def&lt;/span&gt; &lt;span class="nv"&gt;output_layer&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;input&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:
+    &lt;span class="nv"&gt;BatchNorm&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;BatchNormalization&lt;/span&gt;&lt;span class="ss"&gt;()(&lt;/span&gt;&lt;span class="nv"&gt;input&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+    #&lt;span class="nv"&gt;relu&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Activation&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="s"&gt;relu&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;&lt;span class="nv"&gt;BatchNorm&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+    &lt;span class="nv"&gt;AvgPooling&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;AveragePooling2D&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;pool_size&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;,&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="ss"&gt;))(&lt;/span&gt;&lt;span class="nv"&gt;BatchNorm&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+    &lt;span class="nv"&gt;flat&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Flatten&lt;/span&gt;&lt;span class="ss"&gt;()(&lt;/span&gt;&lt;span class="nv"&gt;AvgPooling&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+    &lt;span class="nv"&gt;output&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Dense&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;num_classes&lt;/span&gt;, &lt;span class="nv"&gt;activation&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="s"&gt;softmax&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;&lt;span class="nv"&gt;flat&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;output&lt;/span&gt;
+
+
+&lt;span class="nv"&gt;num_filter&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;12&lt;/span&gt;
+&lt;span class="nv"&gt;dropout_rate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;.&lt;span class="mi"&gt;2&lt;/span&gt;
+&lt;span class="nv"&gt;l&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;12&lt;/span&gt;
+
+&lt;span class="nv"&gt;input&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Input&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;shape&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;32&lt;/span&gt;, &lt;span class="mi"&gt;32&lt;/span&gt;, &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="ss"&gt;))&lt;/span&gt;
+&lt;span class="nv"&gt;First_Conv2D&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Conv2D&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;num_filter&lt;/span&gt;, &lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;7&lt;/span&gt;,&lt;span class="mi"&gt;7&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;, &lt;span class="nv"&gt;use_bias&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;False&lt;/span&gt; ,&lt;span class="nv"&gt;padding&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="s"&gt;same&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="ss"&gt;)(&lt;/span&gt;&lt;span class="nv"&gt;input&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+
+&lt;span class="nv"&gt;First_Block&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;add_denseblock&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;First_Conv2D&lt;/span&gt;, &lt;span class="nv"&gt;num_filter&lt;/span&gt;, &lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;span class="nv"&gt;First_Transition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;add_transition&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;First_Block&lt;/span&gt;, &lt;span class="nv"&gt;num_filter&lt;/span&gt;, &lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+
+&lt;span class="nv"&gt;Second_Block&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;add_denseblock&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;First_Transition&lt;/span&gt;, &lt;span class="nv"&gt;num_filter&lt;/span&gt;, &lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;span class="nv"&gt;Second_Transition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;add_transition&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;Second_Block&lt;/span&gt;, &lt;span class="nv"&gt;num_filter&lt;/span&gt;, &lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+
+&lt;span class="nv"&gt;Third_Block&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;add_denseblock&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;Second_Transition&lt;/span&gt;, &lt;span class="nv"&gt;num_filter&lt;/span&gt;, &lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;span class="nv"&gt;Third_Transition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;add_transition&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;Third_Block&lt;/span&gt;, &lt;span class="nv"&gt;num_filter&lt;/span&gt;, &lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+
+&lt;span class="nv"&gt;Last_Block&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;add_denseblock&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;Third_Transition&lt;/span&gt;,  &lt;span class="nv"&gt;num_filter&lt;/span&gt;, &lt;span class="nv"&gt;dropout_rate&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;span class="nv"&gt;output&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;output_layer&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;Last_Block&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+
+&lt;span class="nv"&gt;model&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;Model&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;inputs&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;[&lt;span class="nv"&gt;input&lt;/span&gt;], &lt;span class="nv"&gt;outputs&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;[&lt;span class="nv"&gt;output&lt;/span&gt;]&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;span class="nv"&gt;model&lt;/span&gt;.&lt;span class="nv"&gt;summary&lt;/span&gt;&lt;span class="ss"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Download CIFAR-10 Data&lt;/h2&gt;
+&lt;h3&gt;Create TFRecords for CIFAR-10 Dataset in CWD&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;tfrecords&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="k"&gt;create&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;&amp;quot;cifar10&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ss"&gt;&amp;quot;./&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Load TFRecords &amp;amp; Augment the loaded images&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;def&lt;/span&gt; &lt;span class="nv"&gt;preprocess&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;img&lt;/span&gt;, &lt;span class="nv"&gt;img_shape&lt;/span&gt;, &lt;span class="nv"&gt;training&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;:
+    &lt;span class="nv"&gt;img&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;img&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;. &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="mi"&gt;255&lt;/span&gt;.&lt;span class="ss"&gt;)&lt;/span&gt;
+    &lt;span class="nv"&gt;img_height&lt;/span&gt;, &lt;span class="nv"&gt;img_width&lt;/span&gt;, &lt;span class="nv"&gt;img_depth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;img_shape&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;training&lt;/span&gt;:
+        # &lt;span class="nv"&gt;Resize&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;image&lt;/span&gt; &lt;span class="nv"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;add&lt;/span&gt; &lt;span class="nv"&gt;four&lt;/span&gt; &lt;span class="nv"&gt;extra&lt;/span&gt; &lt;span class="nv"&gt;pixels&lt;/span&gt; &lt;span class="nv"&gt;on&lt;/span&gt; &lt;span class="nv"&gt;each&lt;/span&gt; &lt;span class="nv"&gt;side&lt;/span&gt;.
+        &lt;span class="nv"&gt;img&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;tf&lt;/span&gt;.&lt;span class="nv"&gt;image&lt;/span&gt;.&lt;span class="nv"&gt;resize_image_with_crop_or_pad&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;
+            &lt;span class="nv"&gt;img&lt;/span&gt;,
+            &lt;span class="nv"&gt;img_height&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;,
+            &lt;span class="nv"&gt;img_width&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;
+        &lt;span class="ss"&gt;)&lt;/span&gt;
+
+        # &lt;span class="nv"&gt;Randomly&lt;/span&gt; &lt;span class="nv"&gt;crop&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; [&lt;span class="nv"&gt;_height&lt;/span&gt;, &lt;span class="nv"&gt;_width&lt;/span&gt;] &lt;span class="nv"&gt;section&lt;/span&gt; &lt;span class="nv"&gt;of&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;image&lt;/span&gt;.
+        &lt;span class="nv"&gt;img&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;tf&lt;/span&gt;.&lt;span class="nv"&gt;random_crop&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;img&lt;/span&gt;, &lt;span class="nv"&gt;img_shape&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+
+        # &lt;span class="nv"&gt;Randomly&lt;/span&gt; &lt;span class="nv"&gt;flip&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;image&lt;/span&gt; &lt;span class="nv"&gt;horizontally&lt;/span&gt;.
+        &lt;span class="nv"&gt;img&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;tf&lt;/span&gt;.&lt;span class="nv"&gt;image&lt;/span&gt;.&lt;span class="nv"&gt;random_flip_left_right&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;img&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+
+    #&lt;span class="nv"&gt;Subtract&lt;/span&gt; &lt;span class="nv"&gt;off&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;mean&lt;/span&gt; &lt;span class="nv"&gt;and&lt;/span&gt; &lt;span class="nv"&gt;divide&lt;/span&gt; &lt;span class="nv"&gt;by&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;variance&lt;/span&gt; &lt;span class="nv"&gt;of&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;pixels&lt;/span&gt;.
+    &lt;span class="nv"&gt;img&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;tf&lt;/span&gt;.&lt;span class="nv"&gt;image&lt;/span&gt;.&lt;span class="nv"&gt;per_image_standardization&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;img&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;img&lt;/span&gt;
+
+
+&lt;span class="nv"&gt;train_dataset&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;tfrecords&lt;/span&gt;.&lt;span class="nv"&gt;load&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;cifar10&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;, [&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;./train.tfrecords&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;], &lt;span class="nv"&gt;batch_size&lt;/span&gt;, &lt;span class="nv"&gt;preprocess&lt;/span&gt;, &lt;span class="nv"&gt;training&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;True&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;span class="nv"&gt;test_dataset&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nv"&gt;tfrecords&lt;/span&gt;.&lt;span class="nv"&gt;load&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;cifar10&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;, [&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;./eval.tfrecords&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;], &lt;span class="nv"&gt;batch_size&lt;/span&gt;, &lt;span class="nv"&gt;preprocess&lt;/span&gt;, &lt;span class="nv"&gt;training&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;False&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When creating TensorBoard callback, you can specify the batch num you want to profile. By default, TensorFlow will profile the second batch, because many one time graph optimizations run on the first batch. You can modify it by setting profile_batch. You can also turn off profiling by setting it to 0.&lt;/p&gt;
+&lt;p&gt;This time, you will profile on the third batch.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;log_dir&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="ss"&gt;&amp;quot;logs/profile/&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;datetime&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;now&lt;/span&gt;&lt;span class="p"&gt;().&lt;/span&gt;&lt;span class="n"&gt;strftime&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;&amp;quot;%Y%m%d-%H%M%S&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;tensorboard_callback&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;tf&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;keras&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;callbacks&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;TensorBoard&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;log_dir&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;log_dir&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;histogram_freq&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;profile_batch&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Train Model&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;model&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;train_dataset&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;epochs&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;steps_per_epoch&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;callbacks&lt;/span&gt;&lt;span class="o"&gt;=[&lt;/span&gt;&lt;span class="n"&gt;tensorboard_callback&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;img alt="alt text" src="model_fit_result.png"&gt;&lt;/p&gt;
+&lt;h2&gt;Visualizing profile result using TensorBoard&lt;/h2&gt;
+&lt;p&gt;Unfortunately, due to #1913, you cannot use TensorBoard in Colab to visualize profile result. You are going to download the logdir and start TensorBoard on your local machine.&lt;/p&gt;
+&lt;p&gt;Compress logdir:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="sx"&gt;!tar -zcvf logs.tar.gz logs/profile/&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Download logdir.tar.gz by right-clicking it in “Files” tab.&lt;/p&gt;
+&lt;p&gt;&lt;img src="file_download.png" width="200" height="200" /&gt;&lt;/p&gt;
+&lt;p&gt;Please make sure you have the latest TensorBoard installed on you local machine as well. &lt;/p&gt;
+&lt;p&gt;&lt;a href="http://toniqapps.github.io/tensorboard.md"&gt;Setup TensorBoard on MacOS&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Execute following commands on your local machine:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;cd&lt;/span&gt; &lt;span class="n"&gt;download&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;directory&lt;/span&gt;
+&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="n"&gt;tar&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;zxvf&lt;/span&gt; &lt;span class="n"&gt;logs&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;tar&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;gz&lt;/span&gt;
+&lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="n"&gt;tensorboard&lt;/span&gt; &lt;span class="c1"&gt;--logdir=logs/ --port=6006&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Open a new tab in your Chrome browser and navigate to localhost:6006 and then click “Profile” tab. You may see the profile result like this:&lt;/p&gt;
+&lt;p&gt;&lt;img src="tensorboard.png" width="1000"/&gt;&lt;/p&gt;</content></entry></feed>
