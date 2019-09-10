@@ -118,7 +118,7 @@
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;&lt;img alt="alt text" src="model_fit_result.png"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt="alt text" src="/images/model_fit_result.png"&gt;&lt;/p&gt;
 &lt;h2&gt;Visualizing profile result using TensorBoard&lt;/h2&gt;
 &lt;p&gt;Unfortunately, due to #1913, you cannot use TensorBoard in Colab to visualize profile result. You are going to download the logdir and start TensorBoard on your local machine.&lt;/p&gt;
 &lt;p&gt;Compress logdir:&lt;/p&gt;
@@ -127,7 +127,7 @@
 
 
 &lt;p&gt;Download logdir.tar.gz by right-clicking it in “Files” tab.&lt;/p&gt;
-&lt;p&gt;&lt;img src="file_download.png" width="200" height="200" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="/images/file_download.png" width="200" height="200" /&gt;&lt;/p&gt;
 &lt;p&gt;Please make sure you have the latest TensorBoard installed on you local machine as well. &lt;/p&gt;
 &lt;p&gt;&lt;a href="http://toniqapps.github.io/tensorboard.md"&gt;Setup TensorBoard on MacOS&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Execute following commands on your local machine:&lt;/p&gt;
@@ -138,4 +138,4 @@
 
 
 &lt;p&gt;Open a new tab in your Chrome browser and navigate to localhost:6006 and then click “Profile” tab. You may see the profile result like this:&lt;/p&gt;
-&lt;p&gt;&lt;img src="tensorboard.png" width="1000"/&gt;&lt;/p&gt;</content></entry></feed>
+&lt;p&gt;&lt;img src="/images/tensorboard.png" width="1000"/&gt;&lt;/p&gt;</content></entry></feed>
