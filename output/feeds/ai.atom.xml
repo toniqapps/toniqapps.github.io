@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Rahul - AI</title><link href="/" rel="alternate"></link><link href="/feeds/ai.atom.xml" rel="self"></link><id>/</id><updated>2019-09-10T09:10:00+02:00</updated><entry><title>Profiling basic training metrics in Keras</title><link href="/profiling-basic-training-metrics-in-keras.html" rel="alternate"></link><published>2019-09-10T09:10:00+02:00</published><updated>2019-09-10T09:10:00+02:00</updated><author><name>Rahul Jain</name></author><id>tag:None,2019-09-10:/profiling-basic-training-metrics-in-keras.html</id><summary type="html">&lt;h1&gt;Profiling basic training metrics in Keras&lt;/h1&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Toniq Apps - AI</title><link href="/" rel="alternate"></link><link href="/feeds/ai.atom.xml" rel="self"></link><id>/</id><updated>2019-09-10T09:10:00+05:30</updated><subtitle>Full Stack Developer</subtitle><entry><title>Profiling basic training metrics in Keras</title><link href="/profiling-basic-training-metrics-in-keras.html" rel="alternate"></link><published>2019-09-10T09:10:00+05:30</published><updated>2019-09-10T09:10:00+05:30</updated><author><name>Rahul Jain</name></author><id>tag:None,2019-09-10:/profiling-basic-training-metrics-in-keras.html</id><summary type="html">&lt;h1&gt;Profiling basic training metrics in Keras&lt;/h1&gt;
 &lt;p&gt;Performance is critical for machine learning. TensorFlow has a built-in profiler that allows you to record runtime of each ops with very little effort. Then you can visualize the profile result in TensorBoard's Profile Plugin. This tutorial focuses on GPU but the Profile Plugin …&lt;/p&gt;</summary><content type="html">&lt;h1&gt;Profiling basic training metrics in Keras&lt;/h1&gt;
 &lt;p&gt;Performance is critical for machine learning. TensorFlow has a built-in profiler that allows you to record runtime of each ops with very little effort. Then you can visualize the profile result in TensorBoard's Profile Plugin. This tutorial focuses on GPU but the Profile Plugin can also be used with TPUs by following the Cloud TPU Tools.&lt;/p&gt;
 &lt;p&gt;This tutorial presents very basic examples to help you learn how to enable profiler when developing your Keras model. You will learn how to use the Keras TensorBoard callback to visualize profile result.&lt;/p&gt;
@@ -118,7 +118,7 @@
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;&lt;img alt="alt text" src="model_fit_result.png"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt="alt text" src="/images/model_fit_result.png"&gt;&lt;/p&gt;
 &lt;h2&gt;Visualizing profile result using TensorBoard&lt;/h2&gt;
 &lt;p&gt;Unfortunately, due to #1913, you cannot use TensorBoard in Colab to visualize profile result. You are going to download the logdir and start TensorBoard on your local machine.&lt;/p&gt;
 &lt;p&gt;Compress logdir:&lt;/p&gt;
@@ -127,7 +127,7 @@
 
 
 &lt;p&gt;Download logdir.tar.gz by right-clicking it in “Files” tab.&lt;/p&gt;
-&lt;p&gt;&lt;img src="file_download.png" width="200" height="200" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="/images/file_download.png" width="200" height="200" /&gt;&lt;/p&gt;
 &lt;p&gt;Please make sure you have the latest TensorBoard installed on you local machine as well. &lt;/p&gt;
 &lt;p&gt;&lt;a href="http://toniqapps.github.io/tensorboard.md"&gt;Setup TensorBoard on MacOS&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Execute following commands on your local machine:&lt;/p&gt;
@@ -138,4 +138,4 @@
 
 
 &lt;p&gt;Open a new tab in your Chrome browser and navigate to localhost:6006 and then click “Profile” tab. You may see the profile result like this:&lt;/p&gt;
-&lt;p&gt;&lt;img src="tensorboard.png" width="1000"/&gt;&lt;/p&gt;</content></entry></feed>
+&lt;p&gt;&lt;img src="/images/tensorboard.png" width="1000"/&gt;&lt;/p&gt;</content></entry></feed>
