@@ -13,6 +13,7 @@ TIMEZONE = 'Europe/Paris'
 DEFAULT_LANG = 'en'
 
 THEME = "/Users/arsenal/pelican-themes/hyde"
+SITELOGO = '/images/toniq_logo.png?s=120'
 
 # Feed generation is usually not desired when developing
 FEED_ALL_ATOM = None
