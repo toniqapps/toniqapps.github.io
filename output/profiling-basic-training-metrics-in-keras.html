@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<link href="http://gmpg.org/xfn/11" rel="profile">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+		<!-- Enable responsiveness on mobile devices-->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+		<title>Rahul</title>
+
+		<!-- CSS -->
+		<link href="//fonts.googleapis.com/" rel="dns-prefetch">
+		<link href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Abril+Fatface|PT+Sans:400,400italic,700&amp;subset=latin,latin-ext" rel="stylesheet">
+
+		<link rel="stylesheet" href="/theme/css/poole.css" />
+		<link rel="stylesheet" href="/theme/css/hyde.css" />
+		<link rel="stylesheet" href="/theme/css/syntax.css" />
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+		<!-- RSS -->
+		<link rel="alternate" type="application/rss+xml" title="RSS" href="/atom.xml">
+	</head>
+
+	<body class="theme-base-0d">
+<div class="sidebar">
+	<div class="container sidebar-sticky">
+		<div class="sidebar-about">
+
+			<h1>
+				<a href="/">
+					<img class="profile-picture" src="/images/">
+					Rahul
+				</a>
+			</h1>
+			<p class="lead"></p>
+			<p class="lead"> </p>
+			<p></p>
+		</div>
+		<nav class="sidebar-nav">
+			<a class="sidebar-nav-item" href="mailto:guilherme.sft@gmail.com">
+				<i class="fa fa-envelope"></i>
+			</a>
+			<a class="sidebar-nav-item" href="#">
+				<i class="fa fa-You can add links in your config file"></i>
+			</a>
+			<a class="sidebar-nav-item" href="#">
+				<i class="fa fa-Another social link"></i>
+			</a>
+			<a class="sidebar-nav-item" href="">
+				<i class="fa fa-feed"></i>
+			</a>
+		</nav>
+	</div>
+</div>		<div class="content container">
+<div class="post">
+	<h1 class="post-title">Profiling basic training metrics in Keras</h1>
+	<span class="post-date">Tue 10 September 2019</span>
+	<h1>Profiling basic training metrics in Keras</h1>
+<p>Performance is critical for machine learning. TensorFlow has a built-in profiler that allows you to record runtime of each ops with very little effort. Then you can visualize the profile result in TensorBoard's Profile Plugin. This tutorial focuses on GPU but the Profile Plugin can also be used with TPUs by following the Cloud TPU Tools.</p>
+<p>This tutorial presents very basic examples to help you learn how to enable profiler when developing your Keras model. You will learn how to use the Keras TensorBoard callback to visualize profile result.</p>
+<h2>Prerequisites</h2>
+<h3>Setup</h3>
+<h2>Network</h2>
+<h3>Densnet Model model with TensorBoard callback</h3>
+<div class="highlight"><pre><span></span><span class="nv">def</span> <span class="nv">add_denseblock</span><span class="ss">(</span><span class="nv">input</span>, <span class="nv">num_filter</span> <span class="o">=</span> <span class="mi">12</span>, <span class="nv">dropout_rate</span> <span class="o">=</span> <span class="mi">0</span>.<span class="mi">2</span><span class="ss">)</span>:
+    <span class="nv">temp</span> <span class="o">=</span> <span class="nv">input</span>
+    <span class="k">for</span> <span class="nv">_</span> <span class="nv">in</span> <span class="nv">range</span><span class="ss">(</span><span class="nv">l</span><span class="ss">)</span>:
+        <span class="nv">BatchNorm</span> <span class="o">=</span> <span class="nv">BatchNormalization</span><span class="ss">()(</span><span class="nv">temp</span><span class="ss">)</span>
+        <span class="nv">relu</span> <span class="o">=</span> <span class="nv">Activation</span><span class="ss">(</span><span class="s1">&#39;</span><span class="s">relu</span><span class="s1">&#39;</span><span class="ss">)(</span><span class="nv">BatchNorm</span><span class="ss">)</span>
+        <span class="nv">Conv2D_3_3</span> <span class="o">=</span> <span class="nv">Conv2D</span><span class="ss">(</span><span class="nv">int</span><span class="ss">(</span><span class="nv">num_filter</span><span class="ss">)</span>, <span class="ss">(</span><span class="mi">3</span>,<span class="mi">3</span><span class="ss">)</span>, <span class="nv">use_bias</span><span class="o">=</span><span class="nv">False</span> ,<span class="nv">padding</span><span class="o">=</span><span class="s1">&#39;</span><span class="s">same</span><span class="s1">&#39;</span><span class="ss">)(</span><span class="nv">relu</span><span class="ss">)</span>
+        <span class="k">if</span> <span class="nv">dropout_rate</span><span class="o">&gt;</span><span class="mi">0</span>:
+            <span class="nv">Conv2D_3_3</span> <span class="o">=</span> <span class="nv">Dropout</span><span class="ss">(</span><span class="nv">dropout_rate</span><span class="ss">)(</span><span class="nv">Conv2D_3_3</span><span class="ss">)</span>
+        <span class="nv">concat</span> <span class="o">=</span> <span class="nv">Concatenate</span><span class="ss">(</span><span class="nv">axis</span><span class="o">=-</span><span class="mi">1</span><span class="ss">)(</span>[<span class="nv">temp</span>, <span class="nv">Conv2D_3_3</span>]<span class="ss">)</span>
+
+        <span class="nv">temp</span> <span class="o">=</span> <span class="nv">concat</span>
+
+    <span class="k">return</span> <span class="nv">temp</span>
+
+<span class="nv">def</span> <span class="nv">add_transition</span><span class="ss">(</span><span class="nv">input</span>, <span class="nv">num_filter</span> <span class="o">=</span> <span class="mi">12</span>, <span class="nv">dropout_rate</span> <span class="o">=</span> <span class="mi">0</span>.<span class="mi">2</span><span class="ss">)</span>:
+    <span class="nv">global</span> <span class="nv">compression</span>
+    <span class="nv">BatchNorm</span> <span class="o">=</span> <span class="nv">BatchNormalization</span><span class="ss">()(</span><span class="nv">input</span><span class="ss">)</span>
+    <span class="nv">relu</span> <span class="o">=</span> <span class="nv">Activation</span><span class="ss">(</span><span class="s1">&#39;</span><span class="s">relu</span><span class="s1">&#39;</span><span class="ss">)(</span><span class="nv">BatchNorm</span><span class="ss">)</span>
+    <span class="nv">Conv2D_BottleNeck</span> <span class="o">=</span> <span class="nv">Conv2D</span><span class="ss">(</span><span class="nv">int</span><span class="ss">(</span><span class="nv">num_filter</span><span class="o">*</span><span class="nv">compression</span><span class="ss">)</span>, <span class="ss">(</span><span class="mi">1</span>,<span class="mi">1</span><span class="ss">)</span>, <span class="nv">use_bias</span><span class="o">=</span><span class="nv">False</span> ,<span class="nv">padding</span><span class="o">=</span><span class="s1">&#39;</span><span class="s">same</span><span class="s1">&#39;</span><span class="ss">)(</span><span class="nv">relu</span><span class="ss">)</span>
+    <span class="k">if</span> <span class="nv">dropout_rate</span><span class="o">&gt;</span><span class="mi">0</span>:
+        <span class="nv">Conv2D_BottleNeck</span> <span class="o">=</span> <span class="nv">Dropout</span><span class="ss">(</span><span class="nv">dropout_rate</span><span class="ss">)(</span><span class="nv">Conv2D_BottleNeck</span><span class="ss">)</span>
+    <span class="nv">avg</span> <span class="o">=</span> <span class="nv">AveragePooling2D</span><span class="ss">(</span><span class="nv">pool_size</span><span class="o">=</span><span class="ss">(</span><span class="mi">2</span>,<span class="mi">2</span><span class="ss">))(</span><span class="nv">Conv2D_BottleNeck</span><span class="ss">)</span>
+
+    <span class="k">return</span> <span class="nv">avg</span>
+
+<span class="nv">def</span> <span class="nv">output_layer</span><span class="ss">(</span><span class="nv">input</span><span class="ss">)</span>:
+    <span class="nv">BatchNorm</span> <span class="o">=</span> <span class="nv">BatchNormalization</span><span class="ss">()(</span><span class="nv">input</span><span class="ss">)</span>
+    #<span class="nv">relu</span> <span class="o">=</span> <span class="nv">Activation</span><span class="ss">(</span><span class="s1">&#39;</span><span class="s">relu</span><span class="s1">&#39;</span><span class="ss">)(</span><span class="nv">BatchNorm</span><span class="ss">)</span>
+    <span class="nv">AvgPooling</span> <span class="o">=</span> <span class="nv">AveragePooling2D</span><span class="ss">(</span><span class="nv">pool_size</span><span class="o">=</span><span class="ss">(</span><span class="mi">2</span>,<span class="mi">2</span><span class="ss">))(</span><span class="nv">BatchNorm</span><span class="ss">)</span>
+    <span class="nv">flat</span> <span class="o">=</span> <span class="nv">Flatten</span><span class="ss">()(</span><span class="nv">AvgPooling</span><span class="ss">)</span>
+    <span class="nv">output</span> <span class="o">=</span> <span class="nv">Dense</span><span class="ss">(</span><span class="nv">num_classes</span>, <span class="nv">activation</span><span class="o">=</span><span class="s1">&#39;</span><span class="s">softmax</span><span class="s1">&#39;</span><span class="ss">)(</span><span class="nv">flat</span><span class="ss">)</span>
+
+    <span class="k">return</span> <span class="nv">output</span>
+
+
+<span class="nv">num_filter</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="nv">dropout_rate</span> <span class="o">=</span> <span class="mi">0</span>.<span class="mi">2</span>
+<span class="nv">l</span> <span class="o">=</span> <span class="mi">12</span>
+
+<span class="nv">input</span> <span class="o">=</span> <span class="nv">Input</span><span class="ss">(</span><span class="nv">shape</span><span class="o">=</span><span class="ss">(</span><span class="mi">32</span>, <span class="mi">32</span>, <span class="mi">3</span><span class="ss">))</span>
+<span class="nv">First_Conv2D</span> <span class="o">=</span> <span class="nv">Conv2D</span><span class="ss">(</span><span class="nv">num_filter</span>, <span class="ss">(</span><span class="mi">7</span>,<span class="mi">7</span><span class="ss">)</span>, <span class="nv">use_bias</span><span class="o">=</span><span class="nv">False</span> ,<span class="nv">padding</span><span class="o">=</span><span class="s1">&#39;</span><span class="s">same</span><span class="s1">&#39;</span><span class="ss">)(</span><span class="nv">input</span><span class="ss">)</span>
+
+<span class="nv">First_Block</span> <span class="o">=</span> <span class="nv">add_denseblock</span><span class="ss">(</span><span class="nv">First_Conv2D</span>, <span class="nv">num_filter</span>, <span class="nv">dropout_rate</span><span class="ss">)</span>
+<span class="nv">First_Transition</span> <span class="o">=</span> <span class="nv">add_transition</span><span class="ss">(</span><span class="nv">First_Block</span>, <span class="nv">num_filter</span>, <span class="nv">dropout_rate</span><span class="ss">)</span>
+
+<span class="nv">Second_Block</span> <span class="o">=</span> <span class="nv">add_denseblock</span><span class="ss">(</span><span class="nv">First_Transition</span>, <span class="nv">num_filter</span>, <span class="nv">dropout_rate</span><span class="ss">)</span>
+<span class="nv">Second_Transition</span> <span class="o">=</span> <span class="nv">add_transition</span><span class="ss">(</span><span class="nv">Second_Block</span>, <span class="nv">num_filter</span>, <span class="nv">dropout_rate</span><span class="ss">)</span>
+
+<span class="nv">Third_Block</span> <span class="o">=</span> <span class="nv">add_denseblock</span><span class="ss">(</span><span class="nv">Second_Transition</span>, <span class="nv">num_filter</span>, <span class="nv">dropout_rate</span><span class="ss">)</span>
+<span class="nv">Third_Transition</span> <span class="o">=</span> <span class="nv">add_transition</span><span class="ss">(</span><span class="nv">Third_Block</span>, <span class="nv">num_filter</span>, <span class="nv">dropout_rate</span><span class="ss">)</span>
+
+<span class="nv">Last_Block</span> <span class="o">=</span> <span class="nv">add_denseblock</span><span class="ss">(</span><span class="nv">Third_Transition</span>,  <span class="nv">num_filter</span>, <span class="nv">dropout_rate</span><span class="ss">)</span>
+<span class="nv">output</span> <span class="o">=</span> <span class="nv">output_layer</span><span class="ss">(</span><span class="nv">Last_Block</span><span class="ss">)</span>
+
+<span class="nv">model</span> <span class="o">=</span> <span class="nv">Model</span><span class="ss">(</span><span class="nv">inputs</span><span class="o">=</span>[<span class="nv">input</span>], <span class="nv">outputs</span><span class="o">=</span>[<span class="nv">output</span>]<span class="ss">)</span>
+<span class="nv">model</span>.<span class="nv">summary</span><span class="ss">()</span>
+</pre></div>
+
+
+<h2>Download CIFAR-10 Data</h2>
+<h3>Create TFRecords for CIFAR-10 Dataset in CWD</h3>
+<div class="highlight"><pre><span></span><span class="n">tfrecords</span><span class="p">.</span><span class="k">create</span><span class="p">(</span><span class="ss">&quot;cifar10&quot;</span><span class="p">,</span> <span class="ss">&quot;./&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<h3>Load TFRecords &amp; Augment the loaded images</h3>
+<div class="highlight"><pre><span></span><span class="nv">def</span> <span class="nv">preprocess</span><span class="ss">(</span><span class="nv">img</span>, <span class="nv">img_shape</span>, <span class="nv">training</span><span class="ss">)</span>:
+    <span class="nv">img</span> <span class="o">=</span> <span class="nv">img</span> <span class="o">*</span> <span class="ss">(</span><span class="mi">1</span>. <span class="o">/</span> <span class="mi">255</span>.<span class="ss">)</span>
+    <span class="nv">img_height</span>, <span class="nv">img_width</span>, <span class="nv">img_depth</span> <span class="o">=</span> <span class="nv">img_shape</span>
+    <span class="k">if</span> <span class="nv">training</span>:
+        # <span class="nv">Resize</span> <span class="nv">the</span> <span class="nv">image</span> <span class="nv">to</span> <span class="nv">add</span> <span class="nv">four</span> <span class="nv">extra</span> <span class="nv">pixels</span> <span class="nv">on</span> <span class="nv">each</span> <span class="nv">side</span>.
+        <span class="nv">img</span> <span class="o">=</span> <span class="nv">tf</span>.<span class="nv">image</span>.<span class="nv">resize_image_with_crop_or_pad</span><span class="ss">(</span>
+            <span class="nv">img</span>,
+            <span class="nv">img_height</span> <span class="o">+</span> <span class="mi">8</span>,
+            <span class="nv">img_width</span> <span class="o">+</span> <span class="mi">8</span>
+        <span class="ss">)</span>
+
+        # <span class="nv">Randomly</span> <span class="nv">crop</span> <span class="nv">a</span> [<span class="nv">_height</span>, <span class="nv">_width</span>] <span class="nv">section</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">image</span>.
+        <span class="nv">img</span> <span class="o">=</span> <span class="nv">tf</span>.<span class="nv">random_crop</span><span class="ss">(</span><span class="nv">img</span>, <span class="nv">img_shape</span><span class="ss">)</span>
+
+        # <span class="nv">Randomly</span> <span class="nv">flip</span> <span class="nv">the</span> <span class="nv">image</span> <span class="nv">horizontally</span>.
+        <span class="nv">img</span> <span class="o">=</span> <span class="nv">tf</span>.<span class="nv">image</span>.<span class="nv">random_flip_left_right</span><span class="ss">(</span><span class="nv">img</span><span class="ss">)</span>
+
+    #<span class="nv">Subtract</span> <span class="nv">off</span> <span class="nv">the</span> <span class="nv">mean</span> <span class="nv">and</span> <span class="nv">divide</span> <span class="nv">by</span> <span class="nv">the</span> <span class="nv">variance</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">pixels</span>.
+    <span class="nv">img</span> <span class="o">=</span> <span class="nv">tf</span>.<span class="nv">image</span>.<span class="nv">per_image_standardization</span><span class="ss">(</span><span class="nv">img</span><span class="ss">)</span>
+    <span class="k">return</span> <span class="nv">img</span>
+
+
+<span class="nv">train_dataset</span> <span class="o">=</span> <span class="nv">tfrecords</span>.<span class="nv">load</span><span class="ss">(</span><span class="s2">&quot;</span><span class="s">cifar10</span><span class="s2">&quot;</span>, [<span class="s2">&quot;</span><span class="s">./train.tfrecords</span><span class="s2">&quot;</span>], <span class="nv">batch_size</span>, <span class="nv">preprocess</span>, <span class="nv">training</span><span class="o">=</span><span class="nv">True</span><span class="ss">)</span>
+<span class="nv">test_dataset</span> <span class="o">=</span> <span class="nv">tfrecords</span>.<span class="nv">load</span><span class="ss">(</span><span class="s2">&quot;</span><span class="s">cifar10</span><span class="s2">&quot;</span>, [<span class="s2">&quot;</span><span class="s">./eval.tfrecords</span><span class="s2">&quot;</span>], <span class="nv">batch_size</span>, <span class="nv">preprocess</span>, <span class="nv">training</span><span class="o">=</span><span class="nv">False</span><span class="ss">)</span>
+</pre></div>
+
+
+<p>When creating TensorBoard callback, you can specify the batch num you want to profile. By default, TensorFlow will profile the second batch, because many one time graph optimizations run on the first batch. You can modify it by setting profile_batch. You can also turn off profiling by setting it to 0.</p>
+<p>This time, you will profile on the third batch.</p>
+<div class="highlight"><pre><span></span><span class="n">log_dir</span><span class="o">=</span><span class="ss">&quot;logs/profile/&quot;</span> <span class="o">+</span> <span class="n">datetime</span><span class="p">.</span><span class="n">now</span><span class="p">().</span><span class="n">strftime</span><span class="p">(</span><span class="ss">&quot;%Y%m%d-%H%M%S&quot;</span><span class="p">)</span>
+
+<span class="n">tensorboard_callback</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">callbacks</span><span class="p">.</span><span class="n">TensorBoard</span><span class="p">(</span><span class="n">log_dir</span><span class="o">=</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">histogram_freq</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">profile_batch</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+
+
+<h2>Train Model</h2>
+<div class="highlight"><pre><span></span><span class="n">model</span><span class="p">.</span><span class="n">fit</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">train_dataset</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">steps_per_epoch</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">callbacks</span><span class="o">=[</span><span class="n">tensorboard_callback</span><span class="o">]</span><span class="p">,</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+</pre></div>
+
+
+<p><img alt="alt text" src="model_fit_result.png"></p>
+<h2>Visualizing profile result using TensorBoard</h2>
+<p>Unfortunately, due to #1913, you cannot use TensorBoard in Colab to visualize profile result. You are going to download the logdir and start TensorBoard on your local machine.</p>
+<p>Compress logdir:</p>
+<div class="highlight"><pre><span></span><span class="sx">!tar -zcvf logs.tar.gz logs/profile/</span>
+</pre></div>
+
+
+<p>Download logdir.tar.gz by right-clicking it in “Files” tab.</p>
+<p><img src="file_download.png" width="200" height="200" /></p>
+<p>Please make sure you have the latest TensorBoard installed on you local machine as well. </p>
+<p><a href="http://toniqapps.github.io/tensorboard.md">Setup TensorBoard on MacOS</a></p>
+<p>Execute following commands on your local machine:</p>
+<div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">download</span><span class="o">/</span><span class="n">directory</span>
+<span class="err">$</span> <span class="n">tar</span> <span class="o">-</span><span class="n">zxvf</span> <span class="n">logs</span><span class="p">.</span><span class="n">tar</span><span class="p">.</span><span class="n">gz</span>
+<span class="err">$</span> <span class="n">tensorboard</span> <span class="c1">--logdir=logs/ --port=6006</span>
+</pre></div>
+
+
+<p>Open a new tab in your Chrome browser and navigate to localhost:6006 and then click “Profile” tab. You may see the profile result like this:</p>
+<p><img src="tensorboard.png" width="1000"/></p>
+</div>
+		</div>
+	</body>
+</html>
