@@ -133,7 +133,7 @@ model.fit(
 )
 ~~~~
 
-![alt text](model_fit_result.png)
+![alt text](/images/model_fit_result.png)
 
 ## Visualizing profile result using TensorBoard
 
@@ -147,7 +147,7 @@ Compress logdir:
 
 Download logdir.tar.gz by right-clicking it in “Files” tab.
 
-<img src="file_download.png" width="200" height="200" />
+<img src="/images/file_download.png" width="200" height="200" />
 
 Please make sure you have the latest TensorBoard installed on you local machine as well. 
 
@@ -163,5 +163,5 @@ $ tensorboard --logdir=logs/ --port=6006
 
 Open a new tab in your Chrome browser and navigate to localhost:6006 and then click “Profile” tab. You may see the profile result like this:
 
-<img src="tensorboard.png" width="1000"/>
+<img src="/images/tensorboard.png" width="1000"/>
 
